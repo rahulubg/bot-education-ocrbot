@@ -54,44 +54,16 @@ server.listen(process.env.port || process.env.PORT || 3978, function () {
 
 bot.dialog('/', function (session) {
 
-    var msg = session.message;
+    var extractedUrl = extractUrl(session.message);
 
-    // Attempt to extract a url
-    var extractedUrl = extractUrl(msg);
-
-    // Is the url valid, or is there a message attachment, or neither...
-    if (extractedUrl != "") {
-        readImageText(extractedUrl, 'application/json', function (error, response, body) {
-            session.send(extractText(body));
-        })
-    } else if (msg.attachments.length) {
-        
-        var attachment = msg.attachments[0];
-        var contenturl = attachment.contentUrl;
-
-        readImageText(contenturl, 'application/octet-stream', function (error, response, body) {
-            session.send(extractText(body));
-        });
-    } else {
-        session.send("Hello.  My name is OCRBot.  Paste in a link or upload an image and I'll look for words in it.");
+    if (extractedUrl === "") {
+        session.send("Hello.  My name is OCRBot.  Please give me an image link and I'll look for words.");
     }
+
+    readImageText(extractedUrl, function (error, response, body) {
+        session.send(extractText(body));
+    })
 });
-
-//============================================================
-// Set up some trigger actions
-//============================================================
-
-// Example of a triggered action - when user types something matched by
-// the trigger, this dialog begins, clearing the stack and interrupting
-// the current dialog (so be cognizant of this).
-// What if we had put 'send' instead of 'endDialog' here - try this.
-bot.dialog('/bye', function (session) {
-    // end dialog with a cleared stack.  we may want to add an 'onInterrupted'
-    // handler to this dialog to keep the state of the current
-    // conversation by doing something with the dialog stack
-    session.endDialog("Ok... See you later.");
-}).triggerAction({matches: /^bye|Bye/i});
-
 
 //=========================================================
 // Vision Service
@@ -99,14 +71,14 @@ bot.dialog('/bye', function (session) {
 
 var request = require("request");
 
-var readImageText = function _readImageText(url, content_type, callback) {
+var readImageText = function _readImageText(url, callback) {
 
     var options = {
         method: 'POST',
         url: config.CONFIGURATIONS.COMPUTER_VISION_SERVICE.API_URL + "ocr/",
         headers: {
             'ocp-apim-subscription-key': config.CONFIGURATIONS.COMPUTER_VISION_SERVICE.API_KEY,
-            'content-type': content_type
+            'content-type': 'application/json'
         },
         body: {url: url, language: "en"},
         json: true
@@ -115,10 +87,6 @@ var readImageText = function _readImageText(url, content_type, callback) {
     request(options, callback);
 
 };
-
-//=========================================================
-// Helpers
-//=========================================================
 
 var extractText = function _extractText(bodyMessage) {
 
@@ -148,7 +116,9 @@ var extractText = function _extractText(bodyMessage) {
     return "Sorry, I can't find text in it :( !";
 };
 
-
+//=========================================================
+// URL Helpers
+//=========================================================
 
 
 var extractUrl = function _extractUrl(message) {
@@ -185,5 +155,4 @@ function _findUrl(text) {
 }
 
 // a test image:  https://img0.etsystatic.com/045/0/6267543/il_570xN.665155536_842h.jpg
-
 
