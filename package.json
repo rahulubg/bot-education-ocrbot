@@ -1,7 +1,7 @@
 {
   "name": "bot-education-ocrbot",
   "version": "1.0.0",
-  "description": "A basic OCR bot built with Microsoft Bot Framework",
+  "description": "A basic OCR bot built with Microsoft Bot Framework Bot Builder",
   "main": "server.js",
   "dependencies": {
     "botbuilder": "^3.6.0",

@@ -28,12 +28,13 @@ bot.dialog("/", [
 
         var msg = session.message;
         var extractedUrl = extractUrl(msg);
+        var attachment = msg.attachments[0];
 
-        if (msg.attachments.length) {
+        // True if it's an attachment and false if it's an url link
+        if (attachment) {
 
             // Message with attachment, proceed to download it.
             // Skype & MS Teams attachment URLs are secured by a JwtToken, so we need to pass the token from our bot.
-            var attachment = msg.attachments[0];
             console.log(attachment);
 
             var fileDownload = new Promise(
@@ -53,16 +54,21 @@ bot.dialog("/", [
                 readImageText(response, attachment.contentType, function (error, response, body) {
                     session.send(extractText(body));
                 });
-                    next();
 
                 }).catch(function (err, reply) {
                     console.log('Error with attachment: ', { 
                         statusCode: err.statusCode, 
                         message: err });
-                        session.endDialog("Error with attachment or reading image with %s", err);
+                        session.send("Error with attachment or reading image with %s", err);
             });
-        } else {
-            session.send("Hi!  Try attaching an image with words in it (JPEG, PNG, GIF, or BMP work for me).")
+        } 
+        // It's a url link
+        else if (extractedUrl != "") {
+            readImageTextUrl(extractedUrl, 'application/json', function (error, response, body) {
+                session.send(extractText(body));
+        })
+    } else {
+            session.send("Hi!  Try attaching an image or url link with words in it (jpeg, png, gif, or bmp work for me).")
         }
     }
 ]);
@@ -110,14 +116,39 @@ var readImageText = function _readImageText(url, content_type, callback) {
 
 };
 
+var readImageTextUrl = function _readImageTextUrl(url, content_type, callback) {
+
+    var options = {
+        method: 'POST',
+        url: config.CONFIGURATIONS.COMPUTER_VISION_SERVICE.API_URL + "ocr/",
+        headers: {
+            'ocp-apim-subscription-key': config.CONFIGURATIONS.COMPUTER_VISION_SERVICE.API_KEY,
+            'content-type': content_type
+        },
+        body: {url: url, language: "en"},
+        json: true
+    };
+
+    request(options, callback);
+
+};
+
 // Get the text if present in the response from service
 var extractText = function _extractText(bodyMessage) {
 
-    var bodyJson = JSON.parse(bodyMessage);
+    var bodyJson = bodyMessage;
+
+    // The attached images are json strings, the urls are not
+    //  so only convert if we need to
+    if (IsJsonString(bodyMessage)) {
+        bodyJson = JSON.parse(bodyMessage);
+    }
+
+    // The "regions" - part of the json to drill down first level
     var regs = bodyJson.regions;
     text = "";
 
-    if (typeof regs === "undefined") return "Something's amiss";
+    if (typeof regs === "undefined") {return "Something's amiss, please try again.";};
 
     // Get line arrays
     var allLines = regs.map(x => x.lines);
@@ -140,6 +171,15 @@ var extractText = function _extractText(bodyMessage) {
         return "Could not find text in this image. :( Try again?";
     }
 };
+
+function IsJsonString(str) {
+    try {
+        JSON.parse(str);
+    } catch (e) {
+        return false;
+    }
+    return true;
+}
 
 //=========================================================
 // URL Helpers
@@ -180,4 +220,19 @@ function _findUrl(text) {
 }
 
 // a test image:  https://img0.etsystatic.com/045/0/6267543/il_570xN.665155536_842h.jpg
+
+//============================================================
+// Set up some trigger actions
+//============================================================
+
+// Example of a triggered action - when user types something matched by
+// the trigger, this dialog begins, clearing the stack and interrupting
+// the current dialog (so be cognizant of this).
+// What if we had put 'send' instead of 'endDialog' here - try this.
+bot.dialog('/bye', function (session) {
+    // end dialog with a cleared stack.  we may want to add an 'onInterrupted'
+    // handler to this dialog to keep the state of the current
+    // conversation by doing something with the dialog stack
+    session.endDialog("Ok... See you later.");
+}).triggerAction({matches: /^bye|Bye/i});
 
