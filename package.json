@@ -4,10 +4,12 @@
   "description": "A basic OCR bot built with Microsoft Bot Framework",
   "main": "server.js",
   "dependencies": {
-    "botbuilder": "^3.2.3",
-    "request": "^2.75.0",
-    "restify": "^4.1.1",
-    "url": "^0.11.0"
+    "botbuilder": "^3.6.0",
+    "request": "^2.79.0",
+    "restify": "^4.3.0",
+    "url": "^0.11.0",
+    "bluebird": "^3.4.7",
+    "request-promise": "^4.1.1"
   },
   "devDependencies": {},
   "scripts": {

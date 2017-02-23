@@ -1,119 +1,144 @@
-var restify = require('restify');
 var builder = require('botbuilder');
+var restify = require('restify');
+var Promise = require('bluebird');
+var request_promise = require('request-promise').defaults({ encoding: null });
+var request = require('request');
 var config = require('./configuration');
 
-//=========================================================
-// Bot Setup
-//=========================================================
-
-/******** FOR TESTING WITH CONSOLE CONNECTION *********
-
-// Create chat bot
-// Create bot and bind to console
-var connector = new builder.ConsoleConnector().listen();
-var bot = new builder.UniversalBot(connector);
-
-******************************************************/
-
-
-/******** FOR USE WITH BOT EMULATOR AND/OR FOR DEPLOYMENT *********
-*/
-
-// Get secrets from server environment
-var botConnectorOptions = { 
-    appId: config.CONFIGURATIONS.CHAT_CONNECTOR.APP_ID, 
-    appPassword: config.CONFIGURATIONS.CHAT_CONNECTOR.APP_PASSWORD
-};
-
-// Create bot
-var connector = new builder.ChatConnector(botConnectorOptions);
-var bot = new builder.UniversalBot(connector);
 
 // Setup Restify Server
 var server = restify.createServer();
+server.listen(process.env.port || process.env.PORT || 3978, function () {
+    console.log('%s listening to %s', server.name, server.url);
+});
 
-// Handle Bot Framework messages
+// Create chat bot
+var connector = new builder.ChatConnector({
+    appId: process.env.MICROSOFT_APP_ID,
+    appPassword: process.env.MICROSOFT_APP_PASSWORD
+});
+
+// Listen for messages
 server.post('/api/messages', connector.listen());
 
-// Serve a static web page - for testing deployment
-server.get(/.*/, restify.serveStatic({
-	'directory': '.',
-	'default': 'index.html'
-}));
+var bot = new builder.UniversalBot(connector);
 
-server.listen(process.env.port || process.env.PORT || 3978, function () {
-    console.log('%s listening to %s', server.name, server.url); 
-});
+bot.dialog("/", [
+    function (session, args, next) { 
 
-/*
-****************************************************************/
+        var msg = session.message;
+        var extractedUrl = extractUrl(msg);
 
-//=========================================================
-// Bots Dialogs
-//=========================================================
+        if (msg.attachments.length) {
 
-bot.dialog('/', function (session) {
+            // Message with attachment, proceed to download it.
+            // Skype & MS Teams attachment URLs are secured by a JwtToken, so we need to pass the token from our bot.
+            var attachment = msg.attachments[0];
+            console.log(attachment);
 
-    var extractedUrl = extractUrl(session.message);
+            var fileDownload = new Promise(
+                function(resolve, reject) {
+                    var check = checkRequiresToken(msg);
+                    if  (check==true) {
+                        resolve(requestWithToken(attachment.contentUrl));
+                    } else {
+                        resolve(request_promise(attachment.contentUrl));
+                    }
+                }
+            );
 
-    if (extractedUrl === "") {
-        session.send("Hello.  My name is OCRBot.  Please give me an image link and I'll look for words.");
+            fileDownload.then(
+                function (response) {
+
+                readImageText(response, attachment.contentType, function (error, response, body) {
+                    session.send(extractText(body));
+                });
+                    next();
+
+                }).catch(function (err, reply) {
+                    console.log('Error with attachment: ', { 
+                        statusCode: err.statusCode, 
+                        message: err });
+                        session.endDialog("Error with attachment or reading image with %s", err);
+            });
+        } else {
+            session.send("Hi!  Try attaching an image with words in it (JPEG, PNG, GIF, or BMP work for me).")
+        }
     }
+]);
 
-    readImageText(extractedUrl, function (error, response, body) {
-        session.send(extractText(body));
-    })
-});
+// Helper methods
+
+// Request file with Authentication Header
+var requestWithToken = function (url) {
+    return obtainToken().then(function (token) {
+        return request_promise({
+            url: url,
+            headers: {
+                'Authorization': 'Bearer ' + token,
+                'Content-Type': 'application/octet-stream'
+            }
+        });
+    });
+};
+
+// Promise for obtaining JWT Token (requested once)
+var obtainToken = Promise.promisify(connector.getAccessToken.bind(connector));
+
+var checkRequiresToken = function (message) {
+    return message.source === 'skype' || message.source === 'msteams';
+};
 
 //=========================================================
 // Vision Service
 //=========================================================
 
-var request = require("request");
-
-var readImageText = function _readImageText(url, callback) {
+// A request with binary image data to OCR API
+var readImageText = function _readImageText(url, content_type, callback) {
 
     var options = {
         method: 'POST',
         url: config.CONFIGURATIONS.COMPUTER_VISION_SERVICE.API_URL + "ocr/",
         headers: {
-            'ocp-apim-subscription-key': config.CONFIGURATIONS.COMPUTER_VISION_SERVICE.API_KEY,
-            'content-type': 'application/json'
+            'Ocp-Apim-Subscription-Key': config.CONFIGURATIONS.COMPUTER_VISION_SERVICE.API_KEY,
+            'Content-Type': 'application/octet-stream'
         },
-        body: {url: url, language: "en"},
-        json: true
+        body: url,
+        json: false
     };
-
     request(options, callback);
 
 };
 
+// Get the text if present in the response from service
 var extractText = function _extractText(bodyMessage) {
 
-    if (typeof bodyMessage.regions === "undefined") return "";
+    var bodyJson = JSON.parse(bodyMessage);
+    var regs = bodyJson.regions;
+    text = "";
 
-    var regs = bodyMessage.regions;
+    if (typeof regs === "undefined") return "Something's amiss";
 
-    if (typeof regs[0] !== "undefined" &&
-        regs[0].lines.length > 0) {
+    // Get line arrays
+    var allLines = regs.map(x => x.lines);
+    // Flatten array
+    var allLinesFlat =  [].concat.apply([], allLines);
+    // Get the words objects
+    var allWords = allLinesFlat.map(x => x.words);
+    // Flatten array
+    var allWordsFlat = [].concat.apply([], allWords);
+    // Get the text
+    var allText = allWordsFlat.map(x => x.text);
+    // Flatten
+    var allTextFlat = [].concat.apply([], allText);
 
-        text = "";
+    text = allTextFlat.join(" ");
 
-        var lines = regs[0].lines;
-
-        // For all lines in image ocr result
-        //   grab the text in the words array
-        for (i = 0; i < lines.length; i++) {
-            var words = lines[i].words;
-            for (j = 0; j < words.length; j++) {
-                text += " " + words[j].text + " ";
-            }
-        }
-
+    if (text) {
         return text;
+    } else {
+        return "Could not find text in this image. :( Try again?";
     }
-
-    return "Sorry, I can't find text in it :( !";
 };
 
 //=========================================================
