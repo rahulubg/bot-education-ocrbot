@@ -1,1 +1,5 @@
 theme: jekyll-theme-slate
+
+# Build settings
+markdown: kramdown
+permalink: /:title/
