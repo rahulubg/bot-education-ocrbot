@@ -104,9 +104,9 @@ var readImageText = function _readImageText(url, content_type, callback) {
 
     var options = {
         method: 'POST',
-        url: config.CONFIGURATION.COMPUTER_VISION_SERVICE.API_URL + "ocr/",
+        url: config.CONFIGURATIONS.COMPUTER_VISION_SERVICE.API_URL + "ocr/",
         headers: {
-            'Ocp-Apim-Subscription-Key': config.CONFIGURATION.COMPUTER_VISION_SERVICE.API_KEY,
+            'Ocp-Apim-Subscription-Key': config.CONFIGURATIONS.COMPUTER_VISION_SERVICE.API_KEY,
             'Content-Type': 'application/octet-stream'
         },
         body: url,
@@ -120,9 +120,9 @@ var readImageTextUrl = function _readImageTextUrl(url, content_type, callback) {
 
     var options = {
         method: 'POST',
-        url: config.CONFIGURATION.COMPUTER_VISION_SERVICE.API_URL + "ocr/",
+        url: config.CONFIGURATIONS.COMPUTER_VISION_SERVICE.API_URL + "ocr/",
         headers: {
-            'ocp-apim-subscription-key': config.CONFIGURATION.COMPUTER_VISION_SERVICE.API_KEY,
+            'ocp-apim-subscription-key': config.CONFIGURATIONS.COMPUTER_VISION_SERVICE.API_KEY,
             'content-type': content_type
         },
         body: {url: url, language: "en"},
