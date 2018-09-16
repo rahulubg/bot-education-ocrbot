@@ -4,11 +4,27 @@ var Promise = require('bluebird');
 var request_promise = require('request-promise').defaults({ encoding: null });
 var request = require('request');
 var config = require('./configuration');
+var azure = require('botbuilder-azure'); 
 
+var documentDbOptions = {
+    host: 'mydocbuddy9bdb', 
+    masterKey: 'rFESFFrv1sK9eehU63FBsbz7+rUH27YzetCxLC7N3eqVXl0gB2Hrm3Flr4yec36XyEwKCB+nt4G+OqDxxVJdwQ==', 
+    database: 'botdocs',   
+    collection: 'botdata'
+};
+
+var docDbClient = new azure.DocumentDbClient(documentDbOptions);
+
+var cosmosStorage = new azure.AzureBotStorage({ gzipData: false }, docDbClient);
+
+var bot = new builder.UniversalBot(connector, function (session) {
+    // ... Bot code ...
+})
+.set('storage', cosmosStorage);
 
 // Setup Restify Server
 var server = restify.createServer();
-server.listen(process.env.port || process.env.PORT || 3978, function () {
+server.listen(process.env.port || process.env.PORT || 3979, function () {
     console.log('%s listening to %s', server.name, server.url);
 });
 
