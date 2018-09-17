@@ -1,7 +1,7 @@
 var _config = {
     CHAT_CONNECTOR: {
-        APP_ID: "5f7277e2-1796-40bc-a5ba-af11507e605c", //You can obtain an APP ID and PASSWORD here: https://dev.botframework.com/bots/new
-        APP_PASSWORD: "nnhacOQOAU944$_zhEA08~:"       
+        APP_ID: process.env.MICROSOFT_APP_ID, //You can obtain an APP ID and PASSWORD here: https://dev.botframework.com/bots/new
+        APP_PASSWORD: process.env.MICROSOFT_APP_PASSWORD       
     },
     
     COMPUTER_VISION_SERVICE: {
