@@ -84,7 +84,7 @@ bot.dialog("/", [
                 session.send(extractText(body));
         })
     } else {
-            session.send("Hi!  Try attaching an image or url link with words in it (jpeg, png, gif, or bmp work for me).")
+            session.send("Hi! Rahul Try attaching an image or url link with words in it (jpeg, png, gif, or bmp work for me).")
         }
     }
 ]);
