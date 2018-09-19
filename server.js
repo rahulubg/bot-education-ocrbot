@@ -7,8 +7,8 @@ var config = require('./configuration');
 var azure = require('botbuilder-azure'); 
 
 var documentDbOptions = {
-    host: 'mydocbuddy9bdb', 
-    masterKey: 'rFESFFrv1sK9eehU63FBsbz7+rUH27YzetCxLC7N3eqVXl0gB2Hrm3Flr4yec36XyEwKCB+nt4G+OqDxxVJdwQ==', 
+    host: 'https://mydocbuddy.documents.azure.com:443/', 
+    masterKey: 'vEAvagtYRdDd6k3qRUvSXsSBCEvIUpHgJ4v8Q50Nc5lpLxHdr89Ka17O5kVRlwK1Sgfv8vCw3BfT2pYTbqnuKQ==', 
     database: 'botdocs',   
     collection: 'botdata'
 };
