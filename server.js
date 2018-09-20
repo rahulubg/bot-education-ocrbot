@@ -6,21 +6,12 @@ var request = require('request');
 var config = require('./configuration');
 var azure = require('botbuilder-azure'); 
 
-var documentDbOptions = {
-    host: 'https://mydocbuddy.documents.azure.com:443/', 
-    masterKey: 'vEAvagtYRdDd6k3qRUvSXsSBCEvIUpHgJ4v8Q50Nc5lpLxHdr89Ka17O5kVRlwK1Sgfv8vCw3BfT2pYTbqnuKQ==', 
-    database: 'botdocs',   
-    collection: 'botdata'
-};
 
-var docDbClient = new azure.DocumentDbClient(documentDbOptions);
 
-var cosmosStorage = new azure.AzureBotStorage({ gzipData: false }, docDbClient);
-
-var bot = new builder.UniversalBot(connector, function (session) {
+//var bot = new builder.UniversalBot(connector, function (session) {
     // ... Bot code ...
-})
-.set('storage', cosmosStorage);
+//})
+
 
 // Setup Restify Server
 var server = restify.createServer();
@@ -37,7 +28,19 @@ var connector = new builder.ChatConnector({
 // Listen for messages
 server.post('/api/messages', connector.listen());
 
-var bot = new builder.UniversalBot(connector);
+var documentDbOptions = {
+    host: 'https://mydocbuddy.documents.azure.com:443/', 
+    masterKey: 'vEAvagtYRdDd6k3qRUvSXsSBCEvIUpHgJ4v8Q50Nc5lpLxHdr89Ka17O5kVRlwK1Sgfv8vCw3BfT2pYTbqnuKQ==', 
+    database: 'botdocs',   
+    collection: 'botdata'
+};
+
+var docDbClient = new azure.DocumentDbClient(documentDbOptions);
+
+var cosmosStorage = new azure.AzureBotStorage({ gzipData: false }, docDbClient);
+
+var bot = new builder.UniversalBot(connector)
+.set('storage', cosmosStorage);
 
 bot.dialog("/", [
     function (session, args, next) { 
