@@ -1,15 +1,15 @@
 {
-    "name": "Bot_Education_ocrbot",
+    "name": "bot_education_ocrbot",
     "description": "",
     "secretKey": "",
     "services": [
         {
             "appId": "",
-            "id": "abc2ac90-ba8c-11e8-bf8a-f3faab4ee909",
+            "id": "fb2fdef0-bcae-11e8-8be2-5dc5d8430c92",
             "type": "endpoint",
             "appPassword": "",
-            "endpoint": "http://localhost:3979/api/messages",
-            "name": "http://localhost:3979/api/messages"
+            "endpoint": "http://localhost:3978/api/messages",
+            "name": "http://localhost:3978/api/messages"
         }
     ]
 }

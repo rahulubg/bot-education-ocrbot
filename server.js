@@ -28,19 +28,20 @@ var connector = new builder.ChatConnector({
 // Listen for messages
 server.post('/api/messages', connector.listen());
 
-var documentDbOptions = {
-    host: 'https://mydocbuddy.documents.azure.com:443/', 
-    masterKey: 'vEAvagtYRdDd6k3qRUvSXsSBCEvIUpHgJ4v8Q50Nc5lpLxHdr89Ka17O5kVRlwK1Sgfv8vCw3BfT2pYTbqnuKQ==', 
-    database: 'botdocs',   
-    collection: 'botdata'
-};
+var inMemoryStorage = new builder.MemoryBotStorage();
+//var documentDbOptions = {
+ //   host: 'https://mydocbuddy.documents.azure.com:443/', 
+ //   masterKey: 'vEAvagtYRdDd6k3qRUvSXsSBCEvIUpHgJ4v8Q50Nc5lpLxHdr89Ka17O5kVRlwK1Sgfv8vCw3BfT2pYTbqnuKQ==', 
+ //   database: 'botdocs',   
+ //   collection: 'botdata'
+//};
 
-var docDbClient = new azure.DocumentDbClient(documentDbOptions);
+//var docDbClient = new azure.DocumentDbClient(documentDbOptions);
 
-var cosmosStorage = new azure.AzureBotStorage({ gzipData: false }, docDbClient);
+//var cosmosStorage = new azure.AzureBotStorage({ gzipData: false }, docDbClient);
 
 var bot = new builder.UniversalBot(connector)
-.set('storage', cosmosStorage);
+.set('storage', inMemoryStorage);
 
 bot.dialog("/", [
     function (session, args, next) { 
