@@ -64,8 +64,8 @@ bot.dialog("/", [
                         resolve(requestWithToken(attachment.contentUrl));
                     } else {
                         resolve(request_promise(attachment.contentUrl));
-                    }
-                }
+                    } session.send("filedownload check true", err);
+                } session.send("filedownload check false", err);
             );
 
             fileDownload.then(
